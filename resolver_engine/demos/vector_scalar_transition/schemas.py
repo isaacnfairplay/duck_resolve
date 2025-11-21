@@ -1,8 +1,9 @@
 from enum import StrEnum
-from typing import Any
+from typing import Any, cast
 import os
 
 import duckdb
+from duckdb import DuckDBPyRelation
 import pyarrow as pa
 
 
@@ -18,7 +19,7 @@ class VectorScalarFacts(StrEnum):
     PRIMARY_USER_AS_RELATION = "vector_scalar.primary_user_as_relation"
 
 
-def _normalize_user_batch(value: Any):
+def _normalize_user_batch(value: Any) -> DuckDBPyRelation:
     """Normalize arbitrary input into a DuckDB relation.
 
     The demo accepts in-process DuckDB relations, parquet/Arrow payloads, or a Python
@@ -34,36 +35,30 @@ def _normalize_user_batch(value: Any):
     and let DuckDB rebuild an in-process relation when the vectorized resolver runs.
     """
 
-    if isinstance(value, duckdb.DuckDBPyRelation):
+    if isinstance(value, DuckDBPyRelation):
         return value
 
-    if  isinstance(value, pa.Table):
-        return duckdb.arrow(value)
+    if isinstance(value, pa.Table):
+        return cast(DuckDBPyRelation, duckdb.arrow(value))
 
     if isinstance(value, (str, os.PathLike)) and str(value).lower().endswith(".parquet"):
-        return duckdb.read_parquet(value)
+        return duckdb.read_parquet(str(value))
 
     # Allow a list-of-dicts for convenience in the demo.
     if isinstance(value, list) and value and isinstance(value[0], dict):
-        columns = list(value[0].keys())
-        placeholders = "(" + ", ".join(["?"] * len(columns)) + ")"
-        values_clause = ", ".join([placeholders for _ in value])
-        flattened: list[Any] = []
-        for row in value:
-            flattened.extend(row.get(col) for col in columns)
-        query = f"SELECT * FROM (VALUES {values_clause}) AS users({', '.join(columns)})"
-        return duckdb.sql(query, flattened)
+        table = pa.Table.from_pylist(value)
+        return cast(DuckDBPyRelation, duckdb.arrow(table))
 
     if isinstance(value, list) and not value:
         return duckdb.sql(
             "SELECT * FROM (VALUES (NULL::INT, NULL::VARCHAR, NULL::VARCHAR)) "
-            "AS users(user_id, name, email) WHERE 1=0"
+            "AS users(user_id, name, email) WHERE 1=0",
         )
 
     raise TypeError("User batch must be a DuckDB relation or list of dictionaries")
 
 
-def register_vector_scalar_schemas():
+def register_vector_scalar_schemas() -> None:
     if VectorScalarFacts.USER_BATCH_RELATION not in FACT_SCHEMAS:
         register_fact_schema(
             FactSchema(

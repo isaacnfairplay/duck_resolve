@@ -9,7 +9,7 @@ class DemoFacts(str, Enum):
     FAVORITE_COLOR = "demo.favorite_color"
 
 
-def register_demo_schemas():
+def register_demo_schemas() -> None:
     if DemoFacts.USER_NAME not in FACT_SCHEMAS:
         register_fact_schema(FactSchema(DemoFacts.USER_NAME, py_type=str, description="User name"))
     if DemoFacts.USER_ID not in FACT_SCHEMAS:

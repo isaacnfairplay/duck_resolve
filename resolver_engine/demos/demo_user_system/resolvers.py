@@ -1,12 +1,14 @@
-from ...core.resolver_base import BaseResolver, ResolverSpec, ResolverOutput
+from typing import List
+
+from ...core.resolver_base import BaseResolver, ResolverOutput, ResolverSpec
 from ...core.state import ResolutionContext
 from .schemas import DemoFacts
 
 
-registered = False
+registered: bool = False
 
 
-def register_demo_resolvers():
+def register_demo_resolvers() -> None:
     global registered
     if registered:
         return
@@ -21,9 +23,9 @@ def register_demo_resolvers():
         )
     )
     class UserIdResolver(BaseResolver):
-        def run(self, ctx: ResolutionContext):
-            base = ctx.state[DemoFacts.USER_NAME].value
-            return [ResolverOutput(DemoFacts.USER_ID, len(str(base)))]
+        def run(self, ctx: ResolutionContext) -> List[ResolverOutput]:
+            user_name = str(ctx.state[DemoFacts.USER_NAME].value)
+            return [ResolverOutput(DemoFacts.USER_ID, len(user_name))]
 
     @BaseResolver.register(
         ResolverSpec(
@@ -35,8 +37,8 @@ def register_demo_resolvers():
         )
     )
     class FavoriteColorResolver(BaseResolver):
-        def run(self, ctx: ResolutionContext):
-            uid = ctx.state[DemoFacts.USER_ID].value
+        def run(self, ctx: ResolutionContext) -> List[ResolverOutput]:
+            uid = int(ctx.state[DemoFacts.USER_ID].value)
             color = "blue" if uid % 2 == 0 else "green"
             return [ResolverOutput(DemoFacts.FAVORITE_COLOR, color)]
 

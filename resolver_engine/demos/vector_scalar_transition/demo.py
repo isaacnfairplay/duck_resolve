@@ -12,6 +12,8 @@ can provide parquet/Arrow payloads (preferred) or list inputs and rely on DuckDB
 build a temporary relation during vectorized resolution.
 """
 
+from typing import Any, Mapping, Sequence
+
 from ...core.merge import merge_outputs
 from ...core.planner import Planner
 from ...core.resolver_base import ResolverOutput
@@ -21,13 +23,15 @@ from .resolvers import register_vector_scalar_resolvers
 from .schemas import VectorScalarFacts, register_vector_scalar_schemas
 
 
-EXAMPLE_USERS = [
+EXAMPLE_USERS: list[Mapping[str, Any]] = [
     {"user_id": 1, "name": "Ada Lovelace", "email": "ada@example.com"},
     {"user_id": 2, "name": "Grace Hopper", "email": "hopper@example.com"},
 ]
 
 
-def run_vector_to_scalar_demo(user_batch=None):
+def run_vector_to_scalar_demo(
+    user_batch: Sequence[Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Run the vectorized-to-scalar demonstration end-to-end.
 
     Args:

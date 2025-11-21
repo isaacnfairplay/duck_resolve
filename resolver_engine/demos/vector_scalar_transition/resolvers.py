@@ -1,3 +1,5 @@
+from typing import List
+
 import duckdb
 
 from ...core.resolver_base import BaseResolver, ResolverOutput, ResolverSpec
@@ -5,10 +7,10 @@ from ...core.state import ResolutionContext
 from .schemas import VectorScalarFacts
 
 
-registered = False
+registered: bool = False
 
 
-def register_vector_scalar_resolvers():
+def register_vector_scalar_resolvers() -> None:
     global registered
     if registered:
         return
@@ -23,7 +25,7 @@ def register_vector_scalar_resolvers():
         )
     )
     class VectorizedUserBatchResolver(BaseResolver):
-        def run(self, ctx: ResolutionContext):
+        def run(self, ctx: ResolutionContext) -> List[ResolverOutput]:
             relation = ctx.state[VectorScalarFacts.USER_BATCH_RELATION].value
             columns = relation.columns
             records = [dict(zip(columns, row)) for row in relation.fetchall()]
@@ -45,7 +47,7 @@ def register_vector_scalar_resolvers():
         )
     )
     class PrimaryUserResolver(BaseResolver):
-        def run(self, ctx: ResolutionContext):
+        def run(self, ctx: ResolutionContext) -> List[ResolverOutput]:
             records = ctx.state[VectorScalarFacts.USER_RECORDS].value
             if not records:
                 return []
@@ -66,11 +68,13 @@ def register_vector_scalar_resolvers():
         )
     )
     class ScalarToRelationResolver(BaseResolver):
-        def run(self, ctx: ResolutionContext):
+        def run(self, ctx: ResolutionContext) -> List[ResolverOutput]:
             name = ctx.state[VectorScalarFacts.PRIMARY_USER_NAME].value
             email = ctx.state[VectorScalarFacts.PRIMARY_USER_EMAIL].value
-            relation = duckdb.sql(
-                "SELECT * FROM (VALUES (1, ?, ?)) AS users(user_id, name, email)", [name, email]
+            connection = duckdb.connect()
+            relation = connection.sql(
+                "SELECT * FROM (VALUES (1, ?, ?)) AS users(user_id, name, email)",
+                params=[name, email],
             )
             return [
                 ResolverOutput(

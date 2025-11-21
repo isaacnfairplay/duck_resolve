@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Type
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,12 +15,12 @@ class DemoFacts(str, Enum):
     USER_ID = "demo.user_id"
 
 
-def setup_function(function):
+def setup_function(function: object) -> None:
     FACT_SCHEMAS.clear()
     RESOLVER_REGISTRY.clear()
 
 
-def _setup_demo_resolver():
+def _setup_demo_resolver() -> Type[BaseResolver]:
     register_fact_schema(FactSchema(DemoFacts.USER_NAME, py_type=str, description="name"))
     register_fact_schema(FactSchema(DemoFacts.USER_ID, py_type=int, description="id"))
 
@@ -33,14 +34,14 @@ def _setup_demo_resolver():
         )
     )
     class UserIdResolver(BaseResolver):
-        def run(self, ctx: ResolutionContext):
+        def run(self, ctx: ResolutionContext) -> list[ResolverOutput]:
             name = ctx.state[DemoFacts.USER_NAME].value
             return [ResolverOutput(DemoFacts.USER_ID, len(name))]
 
     return UserIdResolver
 
 
-def test_health_endpoint_ok():
+def test_health_endpoint_ok() -> None:
     app = create_app()
     client = TestClient(app)
     resp = client.get("/health")
@@ -48,7 +49,7 @@ def test_health_endpoint_ok():
     assert resp.json()["status"] == "ok"
 
 
-def test_schema_endpoint_returns_registered_facts():
+def test_schema_endpoint_returns_registered_facts() -> None:
     _setup_demo_resolver()
     app = create_app()
     client = TestClient(app)
@@ -61,7 +62,7 @@ def test_schema_endpoint_returns_registered_facts():
     assert data[DemoFacts.USER_NAME.value]["description"] == "name"
 
 
-def test_run_endpoint_invokes_planner_and_returns_facts():
+def test_run_endpoint_invokes_planner_and_returns_facts() -> None:
     _setup_demo_resolver()
     app = create_app()
     client = TestClient(app)
@@ -79,7 +80,7 @@ def test_run_endpoint_invokes_planner_and_returns_facts():
     assert body["trace"]
 
 
-def test_rate_limit_blocks_excessive_requests():
+def test_rate_limit_blocks_excessive_requests() -> None:
     _setup_demo_resolver()
     app = create_app(rate_limit_per_minute=5)
     client = TestClient(app)
@@ -94,3 +95,21 @@ def test_rate_limit_blocks_excessive_requests():
         )
     assert resp.status_code == 429
     assert resp.json()["detail"]
+
+
+def test_explain_endpoint_lists_resolvers_and_metadata() -> None:
+    _setup_demo_resolver()
+    app = create_app()
+    client = TestClient(app)
+
+    resp = client.get("/api/explain")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "resolvers" in body
+    assert len(body["resolvers"]) == 1
+    resolver_info = body["resolvers"][0]
+    assert resolver_info["name"] == "UserIdResolver"
+    assert DemoFacts.USER_NAME.value in resolver_info["inputs"]
+    assert DemoFacts.USER_ID.value in resolver_info["outputs"]
+    assert resolver_info["impact"][DemoFacts.USER_ID.value] == 1.0
