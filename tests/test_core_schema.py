@@ -2,7 +2,7 @@ import pytest
 from enum import Enum
 
 from resolver_engine.core.schema import FactSchema, register_fact_schema, FACT_SCHEMAS
-from resolver_engine.core.state import LineContext
+from resolver_engine.core.state import ResolutionContext
 from resolver_engine.core.merge import merge_outputs
 from resolver_engine.core.resolver_base import ResolverOutput
 from resolver_engine.core.types import FactStatus
@@ -49,7 +49,7 @@ def test_register_fact_schema_twice_raises():
 
 
 def test_accessing_unregistered_fact_raises():
-    ctx = LineContext()
+    ctx = ResolutionContext()
 
     with pytest.raises(KeyError):
         merge_outputs(ctx, [ResolverOutput(DemoFacts.UNKNOWN_KEY, "x")])
@@ -63,7 +63,7 @@ def test_fact_schema_normalization_applied_on_merge():
         description="User name",
     )
     register_fact_schema(schema)
-    ctx = LineContext()
+    ctx = ResolutionContext()
 
     merge_outputs(ctx, [ResolverOutput(DemoFacts.USER_NAME, "  Alice  ")])
 

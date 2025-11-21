@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, Optional, Set
 
-from .state import LineContext
+from .state import ResolutionContext
 from .types import FactStatus, FactValue
 from .merge import merge_outputs
 
@@ -41,13 +41,13 @@ class BaseResolver:
 
         return decorator
 
-    def can_run(self, ctx: LineContext) -> bool:
+    def can_run(self, ctx: ResolutionContext) -> bool:
         return all(fact_id in ctx.state for fact_id in self.spec.input_facts)
 
-    def run(self, ctx: LineContext) -> Iterable[ResolverOutput]:  # pragma: no cover - abstract
+    def run(self, ctx: ResolutionContext) -> Iterable[ResolverOutput]:  # pragma: no cover - abstract
         raise NotImplementedError
 
-    def execute(self, ctx: LineContext, provided_inputs: Optional[Iterable[ResolverOutput]] = None):
+    def execute(self, ctx: ResolutionContext, provided_inputs: Optional[Iterable[ResolverOutput]] = None):
         provided_ids = set()
         if provided_inputs:
             for output in provided_inputs:

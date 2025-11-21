@@ -2,13 +2,13 @@ from typing import Iterable, TYPE_CHECKING, Any
 
 from .schema import FACT_SCHEMAS
 from .types import FactStatus, FactValue
-from .state import LineContext
+from .state import ResolutionContext
 
 if TYPE_CHECKING:  # pragma: no cover
     from .resolver_base import ResolverOutput
 
 
-def merge_outputs(ctx: LineContext, outputs: Iterable[Any]):
+def merge_outputs(ctx: ResolutionContext, outputs: Iterable[Any]):
     for output in outputs:
         fact_id = output.fact_id
         if fact_id not in FACT_SCHEMAS:

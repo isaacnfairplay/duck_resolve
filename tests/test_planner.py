@@ -3,7 +3,7 @@ from enum import Enum
 from resolver_engine.core.schema import FactSchema, FACT_SCHEMAS, register_fact_schema
 from resolver_engine.core.resolver_base import BaseResolver, ResolverSpec, ResolverOutput, RESOLVER_REGISTRY
 from resolver_engine.core.planner import Planner
-from resolver_engine.core.state import LineContext
+from resolver_engine.core.state import ResolutionContext
 from resolver_engine.core.merge import merge_outputs
 
 
@@ -39,15 +39,15 @@ def test_planner_runs_minimal_resolvers_to_satisfy_single_fact():
 
     @BaseResolver.register(spec_a)
     class ResA(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.FOO, "a")]
 
     @BaseResolver.register(spec_b)
     class ResB(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.FOO, "b")]
 
-    ctx = LineContext()
+    ctx = ResolutionContext()
     planner = Planner(required_facts={DemoFacts.FOO}, user_priority={DemoFacts.FOO: 1.0})
     result = planner.run(ctx)
 
@@ -71,7 +71,7 @@ def test_planner_respects_required_facts():
         )
     )
     class ResFoo(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.FOO, "foo")]
 
     @BaseResolver.register(
@@ -84,10 +84,10 @@ def test_planner_respects_required_facts():
         )
     )
     class ResBar(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.BAR, ctx.state[DemoFacts.FOO].value + "bar")]
 
-    ctx = LineContext()
+    ctx = ResolutionContext()
     planner = Planner(required_facts={DemoFacts.FOO, DemoFacts.BAR}, user_priority={})
     result = planner.run(ctx)
 
@@ -109,10 +109,10 @@ def test_planner_stops_when_no_more_eligible_resolvers():
         )
     )
     class NeedsMissing(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.FOO, "foo")]
 
-    ctx = LineContext()
+    ctx = ResolutionContext()
     planner = Planner(required_facts=set(), user_priority={})
     result = planner.run(ctx)
 
@@ -134,7 +134,7 @@ def test_planner_uses_impact_and_cost_in_scheduling():
         )
     )
     class CheapLowImpact(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.FOO, "cheap")]
 
     @BaseResolver.register(
@@ -148,10 +148,10 @@ def test_planner_uses_impact_and_cost_in_scheduling():
         )
     )
     class ExpensiveHighImpact(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.FOO, "expensive")]
 
-    ctx = LineContext()
+    ctx = ResolutionContext()
     planner = Planner(required_facts={DemoFacts.FOO}, user_priority={DemoFacts.FOO: 1.0})
     result = planner.run(ctx)
 

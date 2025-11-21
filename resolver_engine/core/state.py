@@ -5,7 +5,7 @@ from .types import FactValue
 
 
 @dataclass
-class LineContext:
+class ResolutionContext:
     state: Dict[Any, FactValue] = field(default_factory=dict)
     trace: list[str] = field(default_factory=list)
 

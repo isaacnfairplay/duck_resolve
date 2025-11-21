@@ -1,7 +1,7 @@
 from enum import Enum
 
 from resolver_engine.core.schema import FactSchema, FACT_SCHEMAS, register_fact_schema
-from resolver_engine.core.state import LineContext
+from resolver_engine.core.state import ResolutionContext
 from resolver_engine.core.merge import merge_outputs
 from resolver_engine.core.resolver_base import ResolverOutput
 from resolver_engine.core.types import FactStatus
@@ -17,7 +17,7 @@ def setup_function(function):
 
 def test_merge_creates_solid_value_when_empty():
     register_fact_schema(FactSchema(DemoFacts.FOO, py_type=str, description="foo"))
-    ctx = LineContext()
+    ctx = ResolutionContext()
 
     merge_outputs(ctx, [ResolverOutput(DemoFacts.FOO, "x", source="r1")])
 
@@ -29,7 +29,7 @@ def test_merge_creates_solid_value_when_empty():
 
 def test_merge_same_value_updates_provenance_but_not_ambiguous():
     register_fact_schema(FactSchema(DemoFacts.FOO, py_type=str, description="foo"))
-    ctx = LineContext()
+    ctx = ResolutionContext()
     merge_outputs(ctx, [ResolverOutput(DemoFacts.FOO, "x", source="r1")])
 
     merge_outputs(ctx, [ResolverOutput(DemoFacts.FOO, "x", source="r2")])
@@ -44,7 +44,7 @@ def test_merge_different_values_becomes_ambiguous_if_allowed():
     register_fact_schema(
         FactSchema(DemoFacts.FOO, py_type=str, description="foo", allow_ambiguity=True)
     )
-    ctx = LineContext()
+    ctx = ResolutionContext()
     merge_outputs(ctx, [ResolverOutput(DemoFacts.FOO, "x", source="r1")])
 
     merge_outputs(ctx, [ResolverOutput(DemoFacts.FOO, "y", source="r2")])
@@ -59,7 +59,7 @@ def test_merge_disallowed_ambiguity_becomes_conflict():
     register_fact_schema(
         FactSchema(DemoFacts.FOO, py_type=str, description="foo", allow_ambiguity=False)
     )
-    ctx = LineContext()
+    ctx = ResolutionContext()
     merge_outputs(ctx, [ResolverOutput(DemoFacts.FOO, "x", source="r1")])
 
     merge_outputs(ctx, [ResolverOutput(DemoFacts.FOO, "y", source="r2")])
@@ -71,7 +71,7 @@ def test_merge_disallowed_ambiguity_becomes_conflict():
 
 def test_merge_preserves_notes_and_confidence():
     register_fact_schema(FactSchema(DemoFacts.FOO, py_type=str, description="foo"))
-    ctx = LineContext()
+    ctx = ResolutionContext()
     merge_outputs(
         ctx,
         [ResolverOutput(DemoFacts.FOO, "x", source="r1", note="first", confidence=0.6)],

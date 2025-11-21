@@ -1,6 +1,6 @@
 from .schema import FactSchema, register_fact_schema, FACT_SCHEMAS
 from .types import FactStatus, FactValue
-from .state import LineContext
+from .state import ResolutionContext
 from .resolver_base import BaseResolver, ResolverSpec, ResolverOutput, RESOLVER_REGISTRY
 from .merge import merge_outputs
 from .planner import Planner
@@ -11,7 +11,7 @@ __all__ = [
     "FACT_SCHEMAS",
     "FactStatus",
     "FactValue",
-    "LineContext",
+    "ResolutionContext",
     "BaseResolver",
     "ResolverSpec",
     "ResolverOutput",

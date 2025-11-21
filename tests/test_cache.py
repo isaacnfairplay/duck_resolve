@@ -4,7 +4,7 @@ from resolver_engine.core.schema import FactSchema, register_fact_schema, FACT_S
 from resolver_engine.core.cache.sqlite_cache import SQLiteCachePolicy
 from resolver_engine.core.cache.parquet_cache import ParquetCachePolicy
 from resolver_engine.core.resolver_base import BaseResolver, ResolverSpec, ResolverOutput
-from resolver_engine.core.state import LineContext
+from resolver_engine.core.state import ResolutionContext
 from resolver_engine.core.merge import merge_outputs
 
 
@@ -34,11 +34,11 @@ def test_sqlite_cache_hits_return_cached_value(tmp_path):
 
     @BaseResolver.register(spec)
     class CachedRes(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             run_calls.append(1)
             return [ResolverOutput(DemoFacts.A, ctx.state[DemoFacts.A].value + "!", source="calc")]
 
-    ctx = LineContext()
+    ctx = ResolutionContext()
     cache_policy.clear()
 
     for _ in range(2):
@@ -65,11 +65,11 @@ def test_cache_key_includes_relevant_facts(tmp_path):
 
     @BaseResolver.register(spec)
     class TwoInput(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             total = ctx.state[DemoFacts.A].value + ctx.state[DemoFacts.B].value
             return [ResolverOutput(DemoFacts.A, total)]
 
-    ctx = LineContext()
+    ctx = ResolutionContext()
     cache.clear()
     outputs1 = TwoInput().execute(
         ctx, [ResolverOutput(DemoFacts.A, 1), ResolverOutput(DemoFacts.B, 2)]

@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from resolver_engine.app import create_app
 from resolver_engine.core.schema import FACT_SCHEMAS, register_fact_schema, FactSchema
 from resolver_engine.core.resolver_base import BaseResolver, ResolverSpec, ResolverOutput, RESOLVER_REGISTRY
-from resolver_engine.core.state import LineContext
+from resolver_engine.core.state import ResolutionContext
 
 
 class DemoFacts:
@@ -31,7 +31,7 @@ def _setup_app_with_demo():
         )
     )
     class UserIdResolver(BaseResolver):
-        def run(self, ctx: LineContext):
+        def run(self, ctx: ResolutionContext):
             return [ResolverOutput(DemoFacts.USER_ID, len(ctx.state[DemoFacts.USER_NAME].value))]
 
     return create_app()

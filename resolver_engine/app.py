@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from .core.schema import FACT_SCHEMAS
 from .core.merge import merge_outputs
 from .core.resolver_base import ResolverOutput
-from .core.state import LineContext
+from .core.state import ResolutionContext
 from .core.planner import Planner
 
 _rate_buckets = {}
@@ -56,7 +56,7 @@ def create_app(rate_limit_per_minute: int = 60) -> FastAPI:
 
         inputs = {resolve_fact_id(k): v for k, v in body.get("inputs", {}).items()}
         required = {resolve_fact_id(fid) for fid in body.get("required_facts", [])}
-        ctx = LineContext()
+        ctx = ResolutionContext()
         merge_outputs(
             ctx,
             [ResolverOutput(fact_id, value, source="input") for fact_id, value in inputs.items()],

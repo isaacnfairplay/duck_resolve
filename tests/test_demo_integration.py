@@ -2,7 +2,7 @@ from resolver_engine.demos.demo_user_system.schemas import register_demo_schemas
 from resolver_engine.demos.demo_user_system import resolvers as demo_resolvers
 from resolver_engine.core.schema import FACT_SCHEMAS
 from resolver_engine.core.resolver_base import RESOLVER_REGISTRY
-from resolver_engine.core.state import LineContext
+from resolver_engine.core.state import ResolutionContext
 from resolver_engine.core.planner import Planner
 def setup_function(function):
     FACT_SCHEMAS.clear()
@@ -31,7 +31,7 @@ def test_demo_end_to_end_smt_like_flow():
     register_demo_schemas()
     demo_resolvers.register_demo_resolvers()
 
-    ctx = LineContext()
+    ctx = ResolutionContext()
     # provide base fact user name
     from resolver_engine.core.merge import merge_outputs
     from resolver_engine.core.resolver_base import ResolverOutput
