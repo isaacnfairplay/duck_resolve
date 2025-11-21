@@ -162,7 +162,102 @@ All roles will keep these two rules in mind
 
 ---
 
-## 6. Agent Collaboration Pattern
+## 6. UI Experience Documenter (Agent: `ui-playwright-doc-writer`)
+
+**Mission:**  
+Generate clear, easy-to-understand Markdown walkthroughs of the user interface and experience for the demo projects, using Playwright in Codex Cloud to drive the app and capture real screenshots.
+
+This agent does *not* change core logic. Its job is to **show** how things feel to a human using the system.
+
+**Responsibilities:**
+
+- For each demo (e.g. `demo_user_system` and future demos):
+  - Launch the FastAPI app in the Codex Cloud environment.
+  - Use Playwright to:
+    - Open key pages (`/`, `/report.html`, any demo-specific pages).
+    - Fill in inputs, click buttons, and run a few realistic flows.
+    - Capture screenshots at important states (before/after running, error states, etc.).
+  - Produce **Markdown documents** that:
+    - Embed or link to those screenshots.
+    - Describe, in plain language:
+      - What the user sees on each screen.
+      - What actions the user can take.
+      - What happens when they submit or run a resolver.
+      - How scalar vs vectorized flows appear to the user (where applicable).
+    - Are easy to read for non-developers and new team members.
+
+**Inputs:**
+
+- Running demo app inside Codex Cloud (using `create_app()` and uvicorn).
+- Playwright (Chromium) inside Codex Cloud.
+- Fact schemas for the active demo (from `/api/schema`).
+- Existing tests and routes (`/`, `/api/run`, `/report.html`, `/api/explain`).
+
+**Typical workflow:**
+
+1. **Select a demo**  
+   - Start with `demo_user_system`, later apply to other demos (up to 20+).
+   - Identify the “happy path” and 1–2 interesting edge cases (e.g. ambiguity/conflict).
+
+2. **Spin up the app in the Codex Cloud sandbox**  
+   - Install dependencies via `uv`.
+   - Run `uvicorn resolver_engine.app:create_app` on a local port.
+   - Wait until health check (`/health`) returns `{"status": "ok"}`.
+
+3. **Drive the UI with Playwright**  
+   - Open the index page (`/`), wait for form elements to render.
+   - Fill in typical demo inputs (e.g. `demo.user_name = "Alice"`).
+   - Capture a screenshot of the empty form.
+   - Submit or navigate to `/report.html?demo.user_name=Alice` (or equivalent).
+   - Capture a screenshot after history has been updated.
+   - For vectorization demos:
+     - Show one screenshot with scalar input.
+     - Show one screenshot with batch/vector input.
+     - Show how the results differ visually.
+
+4. **Generate Markdown documentation**  
+   - Create a new Markdown file, e.g. `docs/ui_demo_user_system.md`.
+   - Include:
+     - A short scenario intro (“As a user, I want to…”).
+     - Step-by-step numbered steps:
+       1. Go to `/`.
+       2. Enter this value…
+       3. Press this button…
+       4. Observe these results…
+     - For each step, embed or link to the screenshot:
+       - `![Index form](./screenshots/demo_user_system/index.png)`
+       - `![Report after run](./screenshots/demo_user_system/report.png)`
+     - Explain key concepts in plain language:
+       - What “facts” are in this UI.
+       - What the “trace” means.
+       - Where history is stored/displayed.
+       - How vectorized vs scalar runs appear different (if demo supports it).
+
+5. **Keep docs in sync with reality**  
+   - If the UI or endpoints change:
+     - Re-run Playwright.
+     - Update screenshots.
+     - Adjust the Markdown steps so they match the current experience.
+   - Confirm tests still pass so code + docs are consistent.
+
+**Deliverables:**
+
+- One Markdown file per demo (e.g. `docs/ui_demo_<demo_name>.md`) that:
+  - Uses simple language and screenshots.
+  - Can be sent to internal stakeholders or new engineers as a “tour” of the tool.
+  - Demonstrates scalar and vectorized flows where appropriate.
+
+**Notes:**
+
+- Prefer clarity over completeness: prioritize showing the main user journey end-to-end.
+- Avoid implementation jargon in the docs; focus on “what the user does and sees”.
+- For vectorization, explicitly call out:
+  - When the user is providing “many items at once” vs “one item at a time”.
+  - How that changes what is shown in the UI (tables, results, history).
+
+---
+
+## 7. Agent Collaboration Pattern
 
 A typical development iteration:
 
@@ -186,7 +281,7 @@ This loop repeats until all sections in `tests_meta.md` are implemented and pass
 
 ---
 
-## 7. Notes on Using Codex in TDD Mode
+## 8. Notes on Using Codex in TDD Mode
 
 - Always **start from tests**:
   - The first task for a coding agent is to implement or update `tests/` according to `tests_meta.md`.
