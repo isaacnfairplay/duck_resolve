@@ -8,6 +8,7 @@ All roles will keep these two rules in mind
 
 1. Prefer simple solutions and do not introduce unnessisary complexity
 2. Think about what value you are delivering to the user
+3. Use mypy strict
 
 ---
 
