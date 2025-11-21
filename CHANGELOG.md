@@ -6,7 +6,7 @@
 - Provide comprehensive pytest suite derived from `tests_meta.md` covering core, demo, API, UI, caching, and invariants.
 - Rename the shared execution context to `ResolutionContext` for clarity and align tests/build with the new name.
 - Normalize FastAPI `/api/run` responses so DuckDB relations serialize cleanly for documentation and browser consumers.
-- Add Playwright-based workdown guides with screenshots for the demo user system and vector-to-scalar transition flows.
-- Inline the workdown screenshots as base64 data URIs so the docs stay self-contained without binary assets.
-- Expand the workdown docs with multi-step (entry, selection, progress, results) Playwright captures and add a demo app entrypoint that pre-registers demo schemas/resolvers for live runs.
-- Remove leftover binary screenshot assets now that the workdown docs embed base64 data URIs.
+- Add Playwright-based Demo UI guides with screenshots for the demo user system and vector-to-scalar transition flows.
+- Keep the Demo UI screenshots inline as base64 data URIs so the docs stay self-contained without binary assets while rendering in GitHub clients.
+- Expand the Demo UI docs with multi-step (entry, selection, progress, results) Playwright captures and add a demo app entrypoint that pre-registers demo schemas/resolvers for live runs.
+- Rename the Demo UI documentation folder and clean up binary assets now that the inline base64 embeddings display correctly on GitHub.
