@@ -1,0 +1,20 @@
+[project]
+name = "resolver-engine"
+version = "0.1.0"
+description = "Resolver engine demo"
+authors = [{name = "AI"}]
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "beautifulsoup4",
+]
+
+[dependency-groups]
+dev = ["pytest", "httpx"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
