@@ -10,6 +10,8 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "beautifulsoup4",
+    "duckdb",
+    "pyarrow",
 ]
 
 [dependency-groups]
