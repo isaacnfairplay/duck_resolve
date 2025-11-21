@@ -3,11 +3,8 @@ from typing import Any
 import os
 
 import duckdb
+import pyarrow as pa
 
-try:  # Optional dependency for preferred parquet/Arrow interchange
-    import pyarrow as pa
-except ImportError:  # pragma: no cover - optional dependency
-    pa = None
 
 from ...core.schema import FACT_SCHEMAS, FactSchema, register_fact_schema
 
@@ -40,7 +37,7 @@ def _normalize_user_batch(value: Any):
     if isinstance(value, duckdb.DuckDBPyRelation):
         return value
 
-    if pa is not None and isinstance(value, pa.Table):
+    if  isinstance(value, pa.Table):
         return duckdb.arrow(value)
 
     if isinstance(value, (str, os.PathLike)) and str(value).lower().endswith(".parquet"):
