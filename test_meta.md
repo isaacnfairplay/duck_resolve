@@ -56,7 +56,7 @@ The top-level areas:
 **Pseudocode:**
 
 - Arrange:
-  - Create a `LineContext` with empty `state`.
+  - Create a `ResolutionContext` with empty `state`.
   - Do **not** register any schema for `DemoFacts.UNKNOWN_KEY`.
 - Act:
   - Attempt to:
@@ -71,7 +71,7 @@ The top-level areas:
 
 - Arrange:
   - Register `DemoFacts.USER_NAME` with `py_type=str` and `normalize=lambda v: v.strip().lower()`.
-  - Create an empty `LineContext`.
+  - Create an empty `ResolutionContext`.
 - Act:
   - Call `merge_outputs` with a `ResolverOutput`:
     - `fact_id=DemoFacts.USER_NAME`
@@ -217,7 +217,7 @@ The top-level areas:
     - `ResA`: produces `DemoFacts.FOO` directly from given input.
     - `ResB`: also produces `DemoFacts.FOO` but with higher cost.
   - Set `user_priority` to favor `DemoFacts.FOO`.
-  - Create a `LineContext` with necessary base facts for both.
+  - Create a `ResolutionContext` with necessary base facts for both.
 - Act:
   - Run planner with required_facts = `{DemoFacts.FOO}`.
 - Assert:
@@ -416,7 +416,7 @@ The top-level areas:
 
 - Arrange:
   - Register all demo schemas/resolvers.
-  - Create a `LineContext` with some base facts (e.g., user name).
+  - Create a `ResolutionContext` with some base facts (e.g., user name).
   - Required facts: `DemoFacts.USER_ID`, `DemoFacts.FAVORITE_COLOR`.
 - Act:
   - Run planner.
