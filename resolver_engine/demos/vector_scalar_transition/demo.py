@@ -63,13 +63,21 @@ def run_vector_to_scalar_demo(user_batch=None):
     )
     result = planner.run(ctx)
 
-    primary_relation = ctx.state[VectorScalarFacts.PRIMARY_USER_AS_RELATION].value
-    primary_rows = primary_relation.fetchall()
+    primary_relation_value = ctx.state.get(VectorScalarFacts.PRIMARY_USER_AS_RELATION)
+    primary_rows = primary_relation_value.value.fetchall() if primary_relation_value else []
 
     return {
         "executed_resolvers": result.executed_resolvers,
         "user_count": ctx.state[VectorScalarFacts.USER_COUNT].value,
-        "primary_user_name": ctx.state[VectorScalarFacts.PRIMARY_USER_NAME].value,
-        "primary_user_email": ctx.state[VectorScalarFacts.PRIMARY_USER_EMAIL].value,
+        "primary_user_name": (
+            ctx.state[VectorScalarFacts.PRIMARY_USER_NAME].value
+            if VectorScalarFacts.PRIMARY_USER_NAME in ctx.state
+            else None
+        ),
+        "primary_user_email": (
+            ctx.state[VectorScalarFacts.PRIMARY_USER_EMAIL].value
+            if VectorScalarFacts.PRIMARY_USER_EMAIL in ctx.state
+            else None
+        ),
         "roundtrip_relation_rows": primary_rows,
     }
