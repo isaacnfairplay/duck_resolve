@@ -208,4 +208,6 @@ __marimo__/
 
 # Company Specific Code
 _local
+
+# UV lockfile is generated locally but not tracked for this library
 uv.lock
