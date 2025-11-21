@@ -10,6 +10,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "beautifulsoup4",
+    "duckdb>=1.4.2",
 ]
 
 [dependency-groups]
