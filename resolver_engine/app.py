@@ -50,8 +50,14 @@ def create_app(rate_limit_per_minute: int = 60) -> FastAPI:
     def run(body: dict):
         def resolve_fact_id(identifier):
             for fid in FACT_SCHEMAS.keys():
-                if str(fid) == str(identifier):
+                fid_value = getattr(fid, "value", None)
+                if identifier is fid or identifier == fid:
                     return fid
+                if fid_value is not None and identifier == fid_value:
+                    return fid
+                if isinstance(identifier, str):
+                    if identifier == str(fid_value) or identifier == str(fid):
+                        return fid
             return identifier
 
         inputs = {resolve_fact_id(k): v for k, v in body.get("inputs", {}).items()}
