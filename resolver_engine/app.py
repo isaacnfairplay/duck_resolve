@@ -1,6 +1,9 @@
+import json
 import time
 from string import Template
 from typing import Any, Callable
+
+import duckdb
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
@@ -30,8 +33,49 @@ def _check_rate_limit(rate_limit_per_minute: int) -> Callable[[Request], None]:
     return dependency
 
 
-def create_app(rate_limit_per_minute: int = 60) -> FastAPI:
+def _normalize_json_value(value: Any) -> Any:
+    """Convert resolver outputs to JSON-serializable structures.
+
+    DuckDB relations are fetched into in-memory rows so the API response
+    remains serializable for documentation renders and browser clients.
+    Non-serializable values are stringified as a last resort.
+    """
+
+    if isinstance(value, duckdb.DuckDBPyRelation):
+        try:
+            return value.fetchall()
+        except duckdb.ConnectionException:
+            return "DuckDB relation (connection closed)"
+        except Exception:
+            return str(value)
+
+    try:
+        json.dumps(value)
+        return value
+    except TypeError:
+        return str(value)
+
+
+def _register_demo_data() -> None:
+    """Register the bundled demo schemas and resolvers if they are missing."""
+
+    from .demos.demo_user_system.schemas import register_demo_schemas
+    from .demos.demo_user_system.resolvers import register_demo_resolvers
+    from .demos.vector_scalar_transition.schemas import register_vector_scalar_schemas
+    from .demos.vector_scalar_transition.resolvers import register_vector_scalar_resolvers
+
+    register_demo_schemas()
+    register_demo_resolvers()
+    register_vector_scalar_schemas()
+    register_vector_scalar_resolvers()
+
+
+def create_app(rate_limit_per_minute: int = 60, include_demo_data: bool = False) -> FastAPI:
     _rate_buckets.clear()
+
+    if include_demo_data:
+        _register_demo_data()
+
     app = FastAPI()
 
     @app.get("/health")
@@ -65,7 +109,10 @@ def create_app(rate_limit_per_minute: int = 60) -> FastAPI:
         )
         planner = Planner(required_facts=required, user_priority={})
         result = planner.run(ctx)
-        facts = {getattr(fid, "value", str(fid)): fv.value for fid, fv in ctx.state.items()}
+        facts = {
+            getattr(fid, "value", str(fid)): _normalize_json_value(fv.value)
+            for fid, fv in ctx.state.items()
+        }
         return {"facts": facts, "trace": result.executed_resolvers}
 
     @app.get("/api/explain")
