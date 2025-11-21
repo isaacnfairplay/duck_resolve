@@ -19,3 +19,6 @@ dev = ["pytest", "httpx"]
 testpaths = ["tests"]
 addopts = "-q"
 pythonpath = ["."]
+
+[tool.uv.workspace]
+members = ["_local/local"]
