@@ -10,3 +10,6 @@
 - Wrap the inline base64 Demo UI screenshots in HTML figure blocks so GitHub renders them directly without odd redirects.
 - Keep the Demo UI docs self-contained by removing the temporary PNG assets while preserving the multi-step Playwright captures.
 - Rename the Demo UI documentation folder and clean up binary assets now that the inline base64 embeddings display correctly on GitHub.
+- Add Mermaid diagrams that summarize the demo UI screenshots and the shared user story flow for scalar and vector runs.
+- Refresh Demo UI guides after reviewing a new Playwright capture of `/`, replacing inline base64 embeds with concise text and updated Mermaid diagrams that match the current helper form layout.
+- Convert the `/` helper into an interactive schema-driven runner with a required-facts field, inline `/api/run` execution, and refreshed Demo UI documentation to match.

@@ -139,10 +139,116 @@ def create_app(rate_limit_per_minute: int = 60, include_demo_data: bool = False)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> str:
-        inputs_html = "".join(
-            f"<label>{fid}<input name='{fid}' /></label>" for fid in FACT_SCHEMAS.keys()
-        )
-        return f"<html><body><form>{inputs_html}</form></body></html>"
+        return """
+<!DOCTYPE html>
+<html lang=\"en\"> 
+  <head>
+    <meta charset=\"UTF-8\" />
+    <title>Resolver Engine Helper</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 1rem; line-height: 1.5; }
+      fieldset { border: 1px solid #ccc; padding: 1rem; }
+      label { display: block; margin: 0.35rem 0; }
+      input[type=text] { width: 100%; max-width: 420px; }
+      #run-btn { margin-top: 0.75rem; padding: 0.5rem 1rem; }
+      #result { margin-top: 1rem; background: #f5f5f5; padding: 1rem; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Resolver Engine Demo Helper</h1>
+    <p>Fill in any demo fact values, optionally mark required facts, then run the planner.</p>
+    <div id=\"form-container\">Loading available facts...</div>
+    <button id=\"run-btn\" type=\"button\">Run demo</button>
+    <pre id=\"result\">Waiting to run...</pre>
+    <script>
+      async function loadSchema() {
+        const res = await fetch('/api/schema');
+        if (!res.ok) {
+          document.getElementById('form-container').innerText = 'Failed to load schema.';
+          return;
+        }
+        const schema = await res.json();
+        const factEntries = Object.entries(schema);
+        const container = document.createElement('fieldset');
+        const legend = document.createElement('legend');
+        legend.textContent = 'Demo fact inputs';
+        container.appendChild(legend);
+
+        factEntries.forEach(([name, details]) => {
+          const label = document.createElement('label');
+          label.innerHTML = `<strong>${name}</strong> (${details.type}) - ${details.description || ''}`;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.name = name;
+          label.appendChild(input);
+          container.appendChild(label);
+        });
+
+        const requiredLabel = document.createElement('label');
+        requiredLabel.innerHTML = '<strong>Required facts</strong> (comma-separated fact ids)';
+        const requiredInput = document.createElement('input');
+        requiredInput.type = 'text';
+        requiredInput.name = 'required_facts';
+        requiredLabel.appendChild(requiredInput);
+        container.appendChild(requiredLabel);
+
+        const hint = document.createElement('p');
+        hint.textContent = 'Leave fields blank to omit them from the request.';
+        container.appendChild(hint);
+
+        const target = document.getElementById('form-container');
+        target.innerHTML = '';
+        target.appendChild(container);
+      }
+
+      async function runDemo() {
+        const form = document.querySelector('#form-container fieldset');
+        if (!form) return;
+
+        const inputs = {};
+        form.querySelectorAll('input[type="text"]').forEach((input) => {
+          if (input.name === 'required_facts') {
+            return;
+          }
+          if (input.value !== '') {
+            inputs[input.name] = input.value;
+          }
+        });
+
+        const requiredRaw = form.querySelector('input[name="required_facts"]').value;
+        const requiredFacts = requiredRaw
+          .split(',')
+          .map((f) => f.trim())
+          .filter(Boolean);
+
+        const responseEl = document.getElementById('result');
+        responseEl.textContent = 'Running...';
+
+        try {
+          const res = await fetch('/api/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inputs, required_facts: requiredFacts }),
+          });
+
+          if (!res.ok) {
+            responseEl.textContent = `Request failed: ${res.status} ${res.statusText}`;
+            return;
+          }
+
+          const data = await res.json();
+          responseEl.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          responseEl.textContent = `Error: ${err}`;
+        }
+      }
+
+      document.getElementById('run-btn').addEventListener('click', runDemo);
+      loadSchema();
+    </script>
+  </body>
+</html>
+        """
 
     @app.get("/report.html", response_class=PlainTextResponse)
     def report(request: Request) -> str:
