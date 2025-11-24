@@ -44,5 +44,9 @@ ignore_errors = true
 module = ["tests.test_api"]
 ignore_errors = false
 
+[tool.setuptools.package-data]
+"resolver_engine.web.assets" = ["*.css", "*.js"]
+"resolver_engine.web.templates" = ["*.html", "*.js"]
+
 [tool.uv.workspace]
 members = ["_local/local"]

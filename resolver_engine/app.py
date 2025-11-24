@@ -1,21 +1,48 @@
+import html
 import json
 import os
 import time
+from importlib import resources
+from pathlib import Path
 from string import Template
 from typing import Any, Callable
 
 import duckdb
-
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
-from .core.schema import FACT_SCHEMAS
 from .core.merge import merge_outputs
-from .core.resolver_base import RESOLVER_REGISTRY, ResolverOutput
-from .core.state import ResolutionContext
 from .core.planner import Planner
+from .core.resolver_base import RESOLVER_REGISTRY, ResolverOutput
+from .core.schema import FACT_SCHEMAS
+from .core.state import ResolutionContext
+from .web.templates.fragments import InputFragment
 
+DEFAULT_RELATION_SAMPLE = [
+    {"user_id": 1, "name": "Ada Lovelace", "email": "ada@example.com"},
+    {"user_id": 2, "name": "Alan Turing", "email": "alan@example.com"},
+]
+
+RELATION_SAMPLE_OVERRIDES: dict[str, list[dict[str, object]]] = {
+    "vector_scalar.user_batch_relation": DEFAULT_RELATION_SAMPLE,
+    "vector_scalar.primary_user_as_relation": DEFAULT_RELATION_SAMPLE,
+}
+
+_template_cache: dict[str, Template] = {}
 _rate_buckets: dict[str, list[float]] = {}
+
+
+def _load_template(name: str) -> Template:
+    cached = _template_cache.get(name)
+    if cached:
+        return cached
+
+    template_path = resources.files("resolver_engine.web.templates").joinpath(name)
+    content = template_path.read_text(encoding="utf-8")
+    template = Template(content)
+    _template_cache[name] = template
+    return template
 
 
 def _check_rate_limit(rate_limit_per_minute: int) -> Callable[[Request], None]:
@@ -35,12 +62,7 @@ def _check_rate_limit(rate_limit_per_minute: int) -> Callable[[Request], None]:
 
 
 def _normalize_json_value(value: Any) -> Any:
-    """Convert resolver outputs to JSON-serializable structures.
-
-    DuckDB relations are fetched into in-memory rows so the API response
-    remains serializable for documentation renders and browser clients.
-    Non-serializable values are stringified as a last resort.
-    """
+    """Convert resolver outputs to JSON-serializable structures."""
 
     if isinstance(value, duckdb.DuckDBPyRelation):
         try:
@@ -79,6 +101,43 @@ def _register_demo_data() -> None:
     register_support_resolvers()
 
 
+def _build_fact_inputs() -> str:
+    fact_inputs: list[str] = []
+    for fid, schema in sorted(FACT_SCHEMAS.items(), key=lambda item: str(item[0])):
+        fact_id_key = getattr(fid, "value", str(fid))
+        hint_raw = schema.description or ""
+        python_type_raw = schema.py_type.__name__
+        placeholder_raw = hint_raw or "a value"
+
+        fact_id = html.escape(fact_id_key, quote=True)
+        hint = html.escape(hint_raw, quote=True)
+        python_type = html.escape(python_type_raw, quote=True)
+        placeholder = html.escape(placeholder_raw, quote=True)
+
+        if schema.py_type is duckdb.DuckDBPyRelation:
+            sample_rows = RELATION_SAMPLE_OVERRIDES.get(fact_id_key, DEFAULT_RELATION_SAMPLE)
+            fact_inputs.append(
+                InputFragment.TABLE.value.format(
+                    fact_id=fact_id,
+                    hint=hint,
+                    python_type=python_type,
+                    placeholder=html.escape(json.dumps(sample_rows, indent=2), quote=True),
+                    sample_rows=InputFragment.serialize_sample_rows(sample_rows),
+                )
+            )
+        else:
+            fact_inputs.append(
+                InputFragment.TEXT.value.format(
+                    fact_id=fact_id,
+                    hint=hint,
+                    python_type=python_type,
+                    placeholder=placeholder,
+                )
+            )
+
+    return "\n".join(fact_inputs) or "<p class='muted'>No facts are registered yet.</p>"
+
+
 def create_app(rate_limit_per_minute: int = 60, include_demo_data: bool = False) -> FastAPI:
     _rate_buckets.clear()
 
@@ -90,6 +149,8 @@ def create_app(rate_limit_per_minute: int = 60, include_demo_data: bool = False)
         _register_demo_data()
 
     app = FastAPI()
+    assets_path = Path(__file__).parent / "web" / "assets"
+    app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -152,38 +213,13 @@ def create_app(rate_limit_per_minute: int = 60, include_demo_data: bool = False)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> str:
-        inputs_html = "".join(
-            f"<label>{fid}<input name='{fid}' /></label>" for fid in FACT_SCHEMAS.keys()
-        )
-        return f"<html><body><form>{inputs_html}</form></body></html>"
+        template = _load_template("index.html")
+        return template.substitute(inputs_html=_build_fact_inputs(), schema_count=len(FACT_SCHEMAS))
 
     @app.get("/report.html", response_class=PlainTextResponse)
     def report(request: Request) -> str:
         query = request.url.query
-        template = Template(
-            """
-function parseQuery(q) {
-  var parts = q.split('&');
-  var items = [];
-  for (var i=0;i<parts.length;i++) {
-    if(!parts[i]) continue;
-    var kv = parts[i].split('=');
-    if(kv.length>=2 && kv[1] !== '') {
-      items.push([decodeURIComponent(kv[0]), decodeURIComponent(kv[1])]);
-    }
-  }
-  return items;
-}
-var entries = parseQuery('$query');
-var current = JSON.parse(localStorage.getItem('resolverHistory') || '{}');
-for (var i=0;i<entries.length;i++) {
-  var pair = entries[i];
-  current[pair[0]] = pair[1];
-}
-localStorage.setItem('resolverHistory', JSON.stringify(current));
- """
-        )
-        script = template.substitute(query=query)
-        return script
+        template = _load_template("history.js")
+        return template.substitute(query=query)
 
     return app

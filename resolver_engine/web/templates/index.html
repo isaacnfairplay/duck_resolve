@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resolver Engine Playground</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script defer src="/assets/app.js"></script>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <div>
+                <div class="title">Resolver Engine Playground</div>
+                <div class="subtitle">Provide known facts, then run the planner to see derived values and execution trace.</div>
+            </div>
+            <div class="badge" id="schema-count">$schema_count facts registered</div>
+        </header>
+
+        <section class="panel">
+            <h2>Input facts</h2>
+            <p class="muted">Populate any fields you already know. Empty values will be ignored.</p>
+            <form id="fact-form">
+                $inputs_html
+                <div class="actions">
+                    <button type="submit" class="primary">Run planner</button>
+                    <button type="button" class="ghost" id="clear-btn">Clear inputs</button>
+                    <span class="status" id="status">Idle</span>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel results">
+            <div>
+                <h3>Resolved facts</h3>
+                <div id="facts" class="result-card">
+                    <p class="muted">Run the planner to see calculated facts.</p>
+                </div>
+            </div>
+            <div>
+                <h3>Execution trace</h3>
+                <div id="trace" class="result-card">
+                    <p class="muted">Resolver steps will appear here after a run.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
