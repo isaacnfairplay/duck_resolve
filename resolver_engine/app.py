@@ -56,18 +56,26 @@ def _normalize_json_value(value: Any) -> Any:
         return str(value)
 
 
-def _register_demo_data() -> None:
-    """Register the bundled demo schemas and resolvers if they are missing."""
+    def _register_demo_data() -> None:
+        """Register the bundled demo schemas and resolvers if they are missing."""
 
     from .demos.demo_user_system.schemas import register_demo_schemas
     from .demos.demo_user_system.resolvers import register_demo_resolvers
     from .demos.vector_scalar_transition.schemas import register_vector_scalar_schemas
     from .demos.vector_scalar_transition.resolvers import register_vector_scalar_resolvers
+    from .demos.weather_planner.schemas import register_weather_schemas
+    from .demos.weather_planner.resolvers import register_weather_resolvers
+    from .demos.support_triage.schemas import register_support_schemas
+    from .demos.support_triage.resolvers import register_support_resolvers
 
     register_demo_schemas()
     register_demo_resolvers()
     register_vector_scalar_schemas()
     register_vector_scalar_resolvers()
+    register_weather_schemas()
+    register_weather_resolvers()
+    register_support_schemas()
+    register_support_resolvers()
 
 
 def create_app(rate_limit_per_minute: int = 60, include_demo_data: bool = False) -> FastAPI:
