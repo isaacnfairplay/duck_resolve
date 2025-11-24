@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest", "httpx", "mypy"]
+dev = ["pytest", "httpx", "mypy", "playwright"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
