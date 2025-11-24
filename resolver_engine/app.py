@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from string import Template
 from typing import Any, Callable
@@ -56,8 +57,8 @@ def _normalize_json_value(value: Any) -> Any:
         return str(value)
 
 
-    def _register_demo_data() -> None:
-        """Register the bundled demo schemas and resolvers if they are missing."""
+def _register_demo_data() -> None:
+    """Register the bundled demo schemas and resolvers if they are missing."""
 
     from .demos.demo_user_system.schemas import register_demo_schemas
     from .demos.demo_user_system.resolvers import register_demo_resolvers
@@ -80,6 +81,10 @@ def _normalize_json_value(value: Any) -> Any:
 
 def create_app(rate_limit_per_minute: int = 60, include_demo_data: bool = False) -> FastAPI:
     _rate_buckets.clear()
+
+    include_demo_env = os.getenv("RESOLVER_INCLUDE_DEMO_DATA")
+    if include_demo_env is not None:
+        include_demo_data = include_demo_env.lower() in {"1", "true", "yes", "on"}
 
     if include_demo_data:
         _register_demo_data()

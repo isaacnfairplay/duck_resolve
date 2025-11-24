@@ -11,3 +11,4 @@
 - Keep the Demo UI docs self-contained by removing the temporary PNG assets while preserving the multi-step Playwright captures.
 - Rename the Demo UI documentation folder and clean up binary assets now that the inline base64 embeddings display correctly on GitHub.
 - Add two additional demos (weather planner and support triage) with schemas, resolvers, tests, and UI walkthroughs registered in the FastAPI app.
+- Add a pull-request workflow that uses Playwright to regenerate demo markdowns with linked screenshots instead of base64 embeds.
